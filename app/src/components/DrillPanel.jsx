@@ -120,25 +120,27 @@ function SubcatList({ area, tx, onSelect, onClose }) {
 }
 
 // Nivå 2 — transaksjoner
-function TxList({ area, subcat, tx, onBack, onClose, updateTx }) {
+function TxList({ area, subcat, tx, onBack, onClose }) {
   const [search,  setSearch]  = useState('')
   const [mo,      setMo]      = useState('')
   const [acc,     setAcc]     = useState('')
   const [editing, setEditing] = useState(null)
   const [saving,  setSaving]  = useState(false)
   const [saveErr, setSaveErr] = useState(null)
+  const [removed, setRemoved] = useState(new Set())
 
   const color = AREA_COLORS[area] || '#888'
   const icon  = AREA_ICONS[area]  || ''
 
   const rows = useMemo(() => {
     return tx
+      .filter(t => !removed.has(t.id))
       .filter(t => t.area === area && t.subcat === subcat)
       .filter(t => !search || t.beskrivelse.toLowerCase().includes(search.toLowerCase()))
       .filter(t => mo === '' || moIdx(t.dato) === parseInt(mo))
       .filter(t => !acc || t.konto_id === acc)
       .sort((a,b) => b.dato.localeCompare(a.dato))
-  }, [area, subcat, tx, search, mo, acc])
+  }, [area, subcat, tx, search, mo, acc, removed])
 
   const total = rows.reduce((s,t) => s+Math.abs(t.belop), 0)
 
@@ -150,7 +152,7 @@ function TxList({ area, subcat, tx, onBack, onClose, updateTx }) {
       .update({ area: newArea, subcat: newSubcat })
       .eq('id', editing)
     if (error) { setSaveErr(error.message); setSaving(false); return }
-    updateTx(editing, { area: newArea, subcat: newSubcat })
+    setRemoved(prev => new Set([...prev, editing]))
     setEditing(null)
     setSaving(false)
   }
@@ -247,12 +249,12 @@ function TxList({ area, subcat, tx, onBack, onClose, updateTx }) {
   )
 }
 
-export default function DrillPanel({ area, tx, onClose, updateTx }) {
+export default function DrillPanel({ area, tx, onClose }) {
   const [subcat, setSubcat] = useState(null)
   if (!area) return null
   if (subcat) return (
     <TxList area={area} subcat={subcat} tx={tx}
-      onBack={() => setSubcat(null)} onClose={onClose} updateTx={updateTx} />
+      onBack={() => setSubcat(null)} onClose={onClose} />
   )
   return (
     <SubcatList area={area} tx={tx}

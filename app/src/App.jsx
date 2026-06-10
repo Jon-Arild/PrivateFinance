@@ -19,7 +19,7 @@ const NAV = [
 ]
 
 function AppShell() {
-  const { data, loading, error, reload, updateTx } = useTransaksjoner()
+  const { data, loading, error } = useTransaksjoner()
 
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center',
@@ -67,7 +67,7 @@ function AppShell() {
         <Routes>
           <Route path="/"           element={<Hjem       tx={data} />} />
           <Route path="/eiendommer" element={<Eiendommer tx={data} />} />
-          <Route path="/omrader"    element={<Omrader    tx={data} reload={reload} updateTx={updateTx} />} />
+          <Route path="/omrader"    element={<Omrader    tx={data} />} />
           <Route path="/inntekter"  element={<Inntekter  tx={data} />} />
           <Route path="/maaneder"   element={<Maaneder   tx={data} />} />
         </Routes>
