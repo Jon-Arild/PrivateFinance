@@ -81,7 +81,7 @@ export default function Omrader({ tx, reload, updateTx }) {
 
       {drill && (
         <div style={{ marginTop:14 }}>
-          <DrillPanel area={drill} tx={filtered} onClose={()=>setDrill(null)} onUpdate={reload} updateTx={updateTx} />
+          <DrillPanel area={drill} tx={filtered} onClose={()=>setDrill(null)} updateTx={updateTx} />
         </div>
       )}
     </div>

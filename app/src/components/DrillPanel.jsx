@@ -5,31 +5,16 @@ import { supabase } from '../lib/supabase'
 const ACC = { '64794':'Lønn','64808':'Regning','64743':'Spare','platinum':'Platinum','rammela':'Rammelån' }
 const ALL_AREAS = Object.keys(AREA_SUBCATS).sort()
 
-// Inline redigeringsskjema for én transaksjon
-function EditRow({ tx, onSave, onCancel, updateTx }) {
+// Ren form-komponent — kaller onSave(area, subcat) ved lagring
+function EditRow({ tx, saving, err, onSave, onCancel }) {
   const [area,   setArea]   = useState(tx.area)
   const [subcat, setSubcat] = useState(tx.subcat)
-  const [saving, setSaving] = useState(false)
-  const [err,    setErr]    = useState(null)
 
   const subcats = AREA_SUBCATS[area] || []
 
   const handleAreaChange = (a) => {
     setArea(a)
-    const subs = AREA_SUBCATS[a] || []
-    setSubcat(subs[0] || '')
-  }
-
-  const save = async () => {
-    setSaving(true)
-    setErr(null)
-    const { error } = await supabase
-      .from('transaksjoner')
-      .update({ area, subcat })
-      .eq('id', tx.id)
-    if (error) { setErr(error.message); setSaving(false); return }
-    updateTx(tx.id, { area, subcat })
-    onSave()
+    setSubcat((AREA_SUBCATS[a] || [])[0] || '')
   }
 
   return (
@@ -50,7 +35,7 @@ function EditRow({ tx, onSave, onCancel, updateTx }) {
             style={{ fontSize:12, padding:'3px 6px', borderRadius:5, border:'.5px solid #d3d1c7' }}>
             {subcats.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <button onClick={save} disabled={saving}
+          <button onClick={() => onSave(area, subcat)} disabled={saving}
             style={{ fontSize:12, padding:'3px 10px', borderRadius:5, cursor:'pointer',
               background:'#185FA5', color:'#fff', border:'none', opacity:saving?0.6:1 }}>
             {saving ? '…' : 'Lagre'}
@@ -135,11 +120,13 @@ function SubcatList({ area, tx, onSelect, onClose }) {
 }
 
 // Nivå 2 — transaksjoner
-function TxList({ area, subcat, tx, onBack, onClose, onUpdate, updateTx }) {
+function TxList({ area, subcat, tx, onBack, onClose, updateTx }) {
   const [search,  setSearch]  = useState('')
   const [mo,      setMo]      = useState('')
   const [acc,     setAcc]     = useState('')
-  const [editing, setEditing] = useState(null) // tx.id som redigeres
+  const [editing, setEditing] = useState(null)
+  const [saving,  setSaving]  = useState(false)
+  const [saveErr, setSaveErr] = useState(null)
 
   const color = AREA_COLORS[area] || '#888'
   const icon  = AREA_ICONS[area]  || ''
@@ -155,8 +142,17 @@ function TxList({ area, subcat, tx, onBack, onClose, onUpdate, updateTx }) {
 
   const total = rows.reduce((s,t) => s+Math.abs(t.belop), 0)
 
-  const handleSaved = () => {
+  const handleSave = async (newArea, newSubcat) => {
+    setSaving(true)
+    setSaveErr(null)
+    const { error } = await supabase
+      .from('transaksjoner')
+      .update({ area: newArea, subcat: newSubcat })
+      .eq('id', editing)
+    if (error) { setSaveErr(error.message); setSaving(false); return }
+    updateTx(editing, { area: newArea, subcat: newSubcat })
     setEditing(null)
+    setSaving(false)
   }
 
   return (
@@ -201,11 +197,11 @@ function TxList({ area, subcat, tx, onBack, onClose, onUpdate, updateTx }) {
             ))}</tr>
           </thead>
           <tbody>
-            {rows.map((t,i) => editing === t.id ? (
+            {rows.map(t => editing === t.id ? (
               <EditRow key={t.id} tx={t}
-                onSave={handleSaved}
-                onCancel={() => setEditing(null)}
-                updateTx={updateTx} />
+                saving={saving} err={saveErr}
+                onSave={handleSave}
+                onCancel={() => { setEditing(null); setSaveErr(null) }} />
             ) : (
               <tr key={t.id}
                 onMouseEnter={e=>e.currentTarget.style.background='#f8f7f4'}
@@ -226,7 +222,7 @@ function TxList({ area, subcat, tx, onBack, onClose, onUpdate, updateTx }) {
                 </td>
                 <td style={{ padding:'6px 10px', textAlign:'right' }}>
                   <button
-                    onClick={() => setEditing(t.id)}
+                    onClick={() => { setEditing(t.id); setSaveErr(null) }}
                     title='Endre kategori'
                     style={{ fontSize:12, padding:'2px 8px', borderRadius:4, cursor:'pointer',
                       background:'transparent', border:'.5px solid #d3d1c7', color:'#5f5e5a',
@@ -251,13 +247,12 @@ function TxList({ area, subcat, tx, onBack, onClose, onUpdate, updateTx }) {
   )
 }
 
-// Eksportert DrillPanel
-export default function DrillPanel({ area, tx, onClose, onUpdate, updateTx }) {
+export default function DrillPanel({ area, tx, onClose, updateTx }) {
   const [subcat, setSubcat] = useState(null)
   if (!area) return null
   if (subcat) return (
     <TxList area={area} subcat={subcat} tx={tx}
-      onBack={() => setSubcat(null)} onClose={onClose} onUpdate={onUpdate} updateTx={updateTx} />
+      onBack={() => setSubcat(null)} onClose={onClose} updateTx={updateTx} />
   )
   return (
     <SubcatList area={area} tx={tx}
