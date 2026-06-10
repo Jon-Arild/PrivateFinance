@@ -62,7 +62,7 @@ export default function Hjem({ tx }) {
           value={fmt(totalI)} sub='IMI + Noen AS + NAV' color='#3B6D11' />
         <Metric label={`Forbruk${nMnd===1?' denne mnd':' total'}`}
           value={fmt(totalE)} color='#A32D2D' />
-        <Metric label='Netto' value={(totalI-totalE)>=0?'+':''+(fmt(totalI-totalE))}
+        <Metric label='Netto' value={((totalI-totalE)>=0?'+':'') + fmt(totalI-totalE)}
           color={(totalI-totalE)>=0?'#3B6D11':'#A32D2D'} sub='Lønn minus forbruk' />
         {jalcoSum>0 && <Metric label='Jalco' value={fmt(jalcoSum)} color='#185FA5' />}
       </MetricGrid>
