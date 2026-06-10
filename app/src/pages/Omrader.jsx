@@ -6,7 +6,7 @@ import MonthFilter from '../components/MonthFilter'
 import Card from '../components/Card'
 import DrillPanel from '../components/DrillPanel'
 
-export default function Omrader({ tx, reload }) {
+export default function Omrader({ tx, reload, updateTx }) {
   const { filtered, month, setMonth, nMnd } = useFilter(tx)
   const [drill, setDrill] = useState(null)
 
@@ -81,7 +81,7 @@ export default function Omrader({ tx, reload }) {
 
       {drill && (
         <div style={{ marginTop:14 }}>
-          <DrillPanel area={drill} tx={filtered} onClose={()=>setDrill(null)} onUpdate={reload} />
+          <DrillPanel area={drill} tx={filtered} onClose={()=>setDrill(null)} onUpdate={reload} updateTx={updateTx} />
         </div>
       )}
     </div>

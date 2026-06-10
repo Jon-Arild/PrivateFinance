@@ -6,7 +6,7 @@ const ACC = { '64794':'Lønn','64808':'Regning','64743':'Spare','platinum':'Plat
 const ALL_AREAS = Object.keys(AREA_SUBCATS).sort()
 
 // Inline redigeringsskjema for én transaksjon
-function EditRow({ tx, onSave, onCancel }) {
+function EditRow({ tx, onSave, onCancel, updateTx }) {
   const [area,   setArea]   = useState(tx.area)
   const [subcat, setSubcat] = useState(tx.subcat)
   const [saving, setSaving] = useState(false)
@@ -28,6 +28,7 @@ function EditRow({ tx, onSave, onCancel }) {
       .update({ area, subcat })
       .eq('id', tx.id)
     if (error) { setErr(error.message); setSaving(false); return }
+    updateTx(tx.id, { area, subcat })
     onSave()
   }
 
@@ -134,7 +135,7 @@ function SubcatList({ area, tx, onSelect, onClose }) {
 }
 
 // Nivå 2 — transaksjoner
-function TxList({ area, subcat, tx, onBack, onClose, onUpdate }) {
+function TxList({ area, subcat, tx, onBack, onClose, onUpdate, updateTx }) {
   const [search,  setSearch]  = useState('')
   const [mo,      setMo]      = useState('')
   const [acc,     setAcc]     = useState('')
@@ -156,7 +157,6 @@ function TxList({ area, subcat, tx, onBack, onClose, onUpdate }) {
 
   const handleSaved = () => {
     setEditing(null)
-    onUpdate?.()
   }
 
   return (
@@ -204,9 +204,10 @@ function TxList({ area, subcat, tx, onBack, onClose, onUpdate }) {
             {rows.map((t,i) => editing === t.id ? (
               <EditRow key={t.id} tx={t}
                 onSave={handleSaved}
-                onCancel={() => setEditing(null)} />
+                onCancel={() => setEditing(null)}
+                updateTx={updateTx} />
             ) : (
-              <tr key={i}
+              <tr key={t.id}
                 onMouseEnter={e=>e.currentTarget.style.background='#f8f7f4'}
                 onMouseLeave={e=>e.currentTarget.style.background=''}>
                 <td style={{ padding:'6px 10px', color:'#888780', whiteSpace:'nowrap' }}>
@@ -251,12 +252,12 @@ function TxList({ area, subcat, tx, onBack, onClose, onUpdate }) {
 }
 
 // Eksportert DrillPanel
-export default function DrillPanel({ area, tx, onClose, onUpdate }) {
+export default function DrillPanel({ area, tx, onClose, onUpdate, updateTx }) {
   const [subcat, setSubcat] = useState(null)
   if (!area) return null
   if (subcat) return (
     <TxList area={area} subcat={subcat} tx={tx}
-      onBack={() => setSubcat(null)} onClose={onClose} onUpdate={onUpdate} />
+      onBack={() => setSubcat(null)} onClose={onClose} onUpdate={onUpdate} updateTx={updateTx} />
   )
   return (
     <SubcatList area={area} tx={tx}

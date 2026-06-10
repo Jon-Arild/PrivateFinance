@@ -16,6 +16,10 @@ export function useTransaksjoner() {
     setLoading(false)
   }, [])
 
+  const updateTx = useCallback((id, changes) => {
+    setData(prev => prev.map(t => t.id === id ? { ...t, ...changes } : t))
+  }, [])
+
   useEffect(() => { setLoading(true); load() }, [load])
-  return { data, loading, error, reload: load }
+  return { data, loading, error, reload: load, updateTx }
 }
