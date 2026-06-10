@@ -18,3 +18,19 @@ export const AREA_ICONS = {
 
 export const moIdx = (dato) =>
   parseInt(String(dato).replace(/\//g,'-').slice(5,7)) - 1
+
+export const AREA_SUBCATS = {
+  'Annet':    ['Ukategorisert'],
+  'Barna':    ['Barnebarn','Emilie','Jonathan','Sarah'],
+  'Bil':      ['Billån Nissan Ariya','Drivstoff & parkering'],
+  'Båt':      ['Båtplass','Forsikring','Opplag & havn','Renter','Service & vedlikehold','Strøm'],
+  'Dagligliv':['Abonnement & medier','Kontantuttak','Mat & dagligvarer','Restaurant & café'],
+  'Enebolig': ['Bygg & utstyr','Forsikring','Hage & gartner','Interiør & kunst','Kommunale avgifter','Oppussing','Renter','Strøm','TV & internett'],
+  'Familie':  ['Kone brukskonto'],
+  'Ferie':    ['Barcelona','Ferietur','Fly & reise','Overnatting & reise','Påsketur'],
+  'Fritid':   ['Sport & aktiviteter'],
+  'Hytta':    ['Oppussing','Renter','Strøm','TV & internett','Vedlikehold','Velforening'],
+  'Inntekt':  ['Jalco','Lønn IMI','Lønn Noen AS','NAV Pensjon'],
+  'Personlig':['Helse & trening','Klær & mote','Velvære & pleie'],
+  'Økonomi':  ['Bankgebyrer','Gjeld','Restskatt','Sparing & investering','Ukjent lån'],
+}

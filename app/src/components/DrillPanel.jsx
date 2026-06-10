@@ -1,7 +1,70 @@
 import { useState, useMemo } from 'react'
-import { fmt, MONTHS, AREA_ICONS, AREA_COLORS, moIdx } from '../lib/utils'
+import { fmt, MONTHS, AREA_ICONS, AREA_COLORS, AREA_SUBCATS, moIdx } from '../lib/utils'
+import { supabase } from '../lib/supabase'
 
 const ACC = { '64794':'Lønn','64808':'Regning','64743':'Spare','platinum':'Platinum','rammela':'Rammelån' }
+const ALL_AREAS = Object.keys(AREA_SUBCATS).sort()
+
+// Inline redigeringsskjema for én transaksjon
+function EditRow({ tx, onSave, onCancel }) {
+  const [area,   setArea]   = useState(tx.area)
+  const [subcat, setSubcat] = useState(tx.subcat)
+  const [saving, setSaving] = useState(false)
+  const [err,    setErr]    = useState(null)
+
+  const subcats = AREA_SUBCATS[area] || []
+
+  const handleAreaChange = (a) => {
+    setArea(a)
+    const subs = AREA_SUBCATS[a] || []
+    setSubcat(subs[0] || '')
+  }
+
+  const save = async () => {
+    setSaving(true)
+    setErr(null)
+    const { error } = await supabase
+      .from('transaksjoner')
+      .update({ area, subcat })
+      .eq('id', tx.id)
+    if (error) { setErr(error.message); setSaving(false); return }
+    onSave()
+  }
+
+  return (
+    <tr style={{ background:'#fffbf2', borderTop:'.5px solid #f1efe8' }}>
+      <td style={{ padding:'8px 10px', color:'#888780', whiteSpace:'nowrap', fontSize:12 }}>
+        {tx.dato.slice(5).replace('-','.')}
+      </td>
+      <td style={{ padding:'8px 10px', fontSize:12 }}>
+        {tx.beskrivelse.slice(0,45)}{tx.beskrivelse.length>45?'…':''}
+      </td>
+      <td colSpan={2} style={{ padding:'8px 10px' }}>
+        <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
+          <select value={area} onChange={e=>handleAreaChange(e.target.value)}
+            style={{ fontSize:12, padding:'3px 6px', borderRadius:5, border:'.5px solid #d3d1c7' }}>
+            {ALL_AREAS.map(a => <option key={a} value={a}>{AREA_ICONS[a]||''} {a}</option>)}
+          </select>
+          <select value={subcat} onChange={e=>setSubcat(e.target.value)}
+            style={{ fontSize:12, padding:'3px 6px', borderRadius:5, border:'.5px solid #d3d1c7' }}>
+            {subcats.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button onClick={save} disabled={saving}
+            style={{ fontSize:12, padding:'3px 10px', borderRadius:5, cursor:'pointer',
+              background:'#185FA5', color:'#fff', border:'none', opacity:saving?0.6:1 }}>
+            {saving ? '…' : 'Lagre'}
+          </button>
+          <button onClick={onCancel}
+            style={{ fontSize:12, padding:'3px 10px', borderRadius:5, cursor:'pointer',
+              background:'transparent', border:'.5px solid #d3d1c7', color:'#5f5e5a' }}>
+            Avbryt
+          </button>
+          {err && <span style={{ fontSize:11, color:'#A32D2D' }}>{err}</span>}
+        </div>
+      </td>
+    </tr>
+  )
+}
 
 // Nivå 1 — underkategorier
 function SubcatList({ area, tx, onSelect, onClose }) {
@@ -71,10 +134,11 @@ function SubcatList({ area, tx, onSelect, onClose }) {
 }
 
 // Nivå 2 — transaksjoner
-function TxList({ area, subcat, tx, onBack, onClose }) {
-  const [search, setSearch] = useState('')
-  const [mo, setMo]         = useState('')
-  const [acc, setAcc]       = useState('')
+function TxList({ area, subcat, tx, onBack, onClose, onUpdate }) {
+  const [search,  setSearch]  = useState('')
+  const [mo,      setMo]      = useState('')
+  const [acc,     setAcc]     = useState('')
+  const [editing, setEditing] = useState(null) // tx.id som redigeres
 
   const color = AREA_COLORS[area] || '#888'
   const icon  = AREA_ICONS[area]  || ''
@@ -89,6 +153,11 @@ function TxList({ area, subcat, tx, onBack, onClose }) {
   }, [area, subcat, tx, search, mo, acc])
 
   const total = rows.reduce((s,t) => s+Math.abs(t.belop), 0)
+
+  const handleSaved = () => {
+    setEditing(null)
+    onUpdate?.()
+  }
 
   return (
     <div style={{ background:'#fff', border:`.5px solid ${color}`, borderRadius:12,
@@ -126,14 +195,19 @@ function TxList({ area, subcat, tx, onBack, onClose }) {
       <div style={{ overflowX:'auto' }}>
         <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
           <thead>
-            <tr>{['Dato','Beskrivelse','Beløp'].map((h,i) => (
+            <tr>{['Dato','Beskrivelse','Beløp',''].map((h,i) => (
               <th key={i} style={{ textAlign:i===2?'right':'left', padding:'7px 10px',
                 fontWeight:500, color:'#5f5e5a', borderBottom:'.5px solid #d3d1c7' }}>{h}</th>
             ))}</tr>
           </thead>
           <tbody>
-            {rows.map((t,i) => (
-              <tr key={i} onMouseEnter={e=>e.currentTarget.style.background='#f8f7f4'}
+            {rows.map((t,i) => editing === t.id ? (
+              <EditRow key={t.id} tx={t}
+                onSave={handleSaved}
+                onCancel={() => setEditing(null)} />
+            ) : (
+              <tr key={i}
+                onMouseEnter={e=>e.currentTarget.style.background='#f8f7f4'}
                 onMouseLeave={e=>e.currentTarget.style.background=''}>
                 <td style={{ padding:'6px 10px', color:'#888780', whiteSpace:'nowrap' }}>
                   {t.dato.slice(5).replace('-','.')}
@@ -149,13 +223,23 @@ function TxList({ area, subcat, tx, onBack, onClose }) {
                   color:'#A32D2D', fontWeight:500 }}>
                   {fmt(t.belop)}
                 </td>
+                <td style={{ padding:'6px 10px', textAlign:'right' }}>
+                  <button
+                    onClick={() => setEditing(t.id)}
+                    title='Endre kategori'
+                    style={{ fontSize:12, padding:'2px 8px', borderRadius:4, cursor:'pointer',
+                      background:'transparent', border:'.5px solid #d3d1c7', color:'#5f5e5a',
+                      lineHeight:1.4 }}>
+                    ✏️
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
           {rows.length > 0 && (
             <tfoot>
               <tr style={{ background:'#f8f7f4' }}>
-                <td colSpan={2} style={{ padding:'6px 10px', fontWeight:500, fontSize:12 }}>Sum</td>
+                <td colSpan={3} style={{ padding:'6px 10px', fontWeight:500, fontSize:12 }}>Sum</td>
                 <td style={{ padding:'6px 10px', textAlign:'right', fontWeight:500, fontSize:12 }}>{fmt(total)}</td>
               </tr>
             </tfoot>
@@ -167,12 +251,12 @@ function TxList({ area, subcat, tx, onBack, onClose }) {
 }
 
 // Eksportert DrillPanel
-export default function DrillPanel({ area, tx, onClose }) {
+export default function DrillPanel({ area, tx, onClose, onUpdate }) {
   const [subcat, setSubcat] = useState(null)
   if (!area) return null
   if (subcat) return (
     <TxList area={area} subcat={subcat} tx={tx}
-      onBack={() => setSubcat(null)} onClose={onClose} />
+      onBack={() => setSubcat(null)} onClose={onClose} onUpdate={onUpdate} />
   )
   return (
     <SubcatList area={area} tx={tx}
