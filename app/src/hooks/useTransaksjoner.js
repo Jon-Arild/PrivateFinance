@@ -7,7 +7,6 @@ export function useTransaksjoner() {
   const [error,   setError]   = useState(null)
 
   const load = useCallback(async () => {
-    setLoading(true)
     const { data: rows, error: err } = await supabase
       .from('transaksjoner')
       .select('*')
@@ -17,6 +16,6 @@ export function useTransaksjoner() {
     setLoading(false)
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { setLoading(true); load() }, [load])
   return { data, loading, error, reload: load }
 }

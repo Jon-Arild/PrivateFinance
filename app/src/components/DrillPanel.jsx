@@ -21,15 +21,12 @@ function EditRow({ tx, onSave, onCancel }) {
   }
 
   const save = async () => {
-    if (!tx.id) { setErr(`Mangler ID (felter: ${Object.keys(tx).join(', ')})`); return }
     setSaving(true)
     setErr(null)
-    const { error, count } = await supabase
+    const { error } = await supabase
       .from('transaksjoner')
       .update({ area, subcat })
       .eq('id', tx.id)
-      .select()
-    console.log('[save]', { txId: tx.id, area, subcat, error, count })
     if (error) { setErr(error.message); setSaving(false); return }
     onSave()
   }
