@@ -10,6 +10,7 @@ import Omrader        from './pages/Omrader'
 import Inntekter      from './pages/Inntekter'
 import Maaneder       from './pages/Maaneder'
 import Innstillinger  from './pages/Innstillinger'
+import Importer       from './pages/Importer'
 
 const NAV = [
   { to:'/',               label:'Hjem' },
@@ -17,6 +18,7 @@ const NAV = [
   { to:'/omrader',        label:'Områder' },
   { to:'/inntekter',      label:'Inntekter' },
   { to:'/maaneder',       label:'Per måned' },
+  { to:'/importer',       label:'Importer' },
   { to:'/innstillinger',  label:'Innstillinger' },
 ]
 
@@ -72,6 +74,7 @@ function AppShell() {
           <Route path="/omrader"        element={<Omrader       tx={data} />} />
           <Route path="/inntekter"      element={<Inntekter     tx={data} />} />
           <Route path="/maaneder"       element={<Maaneder      tx={data} />} />
+          <Route path="/importer"       element={<Importer />} />
           <Route path="/innstillinger"  element={<Innstillinger />} />
         </Routes>
       </main>
