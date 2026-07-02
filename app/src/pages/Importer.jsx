@@ -151,6 +151,11 @@ function QueueRow({ tx, subcatMap, iconMap, onDone }) {
   )
 }
 
+function fmtDato(dato) {
+  if (!dato) return null
+  return dato.slice(8) + '.' + dato.slice(5, 7) + '.' + dato.slice(0, 4)
+}
+
 export default function Importer() {
   const { subcatMap, iconMap, loading: katLoading } = useKategorier()
 
@@ -162,8 +167,28 @@ export default function Importer() {
   const [importDone,  setImportDone]  = useState(null)
   const [parseErr,    setParseErr]    = useState(null)
 
+  const [sisteData,    setSisteData]    = useState({})
   const [queue,        setQueue]        = useState([])
   const [queueLoading, setQueueLoading] = useState(true)
+
+  async function loadKontoStatus() {
+    const results = await Promise.all(
+      KONTOER.map(k =>
+        supabase
+          .from('transaksjoner')
+          .select('dato')
+          .eq('konto_id', k.id)
+          .order('dato', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      )
+    )
+    const map = {}
+    KONTOER.forEach((k, i) => {
+      if (results[i].data?.dato) map[k.id] = results[i].data.dato
+    })
+    setSisteData(map)
+  }
 
   async function loadQueue() {
     setQueueLoading(true)
@@ -177,7 +202,7 @@ export default function Importer() {
     setQueueLoading(false)
   }
 
-  useEffect(() => { loadQueue() }, [])
+  useEffect(() => { loadKontoStatus(); loadQueue() }, [])
 
   async function handleCheck() {
     if (!file) return
@@ -270,15 +295,43 @@ export default function Importer() {
 
       {/* Import-seksjon */}
       <Card>
+        {/* Kontooversikt — klikk for å velge */}
+        <div style={{ fontSize: 11, color: '#888780', marginBottom: 8 }}>
+          Velg konto å importere til — siste importerte transaksjon vises per konto
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+          {KONTOER.map(k => {
+            const siste = sisteData[k.id]
+            const active = kontoId === k.id
+            return (
+              <div key={k.id}
+                onClick={() => { setKontoId(k.id); setPreview(null); setImportDone(null) }}
+                style={{
+                  padding: '9px 14px', borderRadius: 8, cursor: 'pointer',
+                  border: `.5px solid ${active ? '#185FA5' : '#d3d1c7'}`,
+                  background: active ? '#f0f6ff' : '#fafaf8',
+                  minWidth: 148, transition: 'border-color .1s',
+                }}>
+                <div style={{ fontSize: 12, fontWeight: 500,
+                  color: active ? '#185FA5' : '#1a1a1a', marginBottom: 4 }}>
+                  {k.label}
+                </div>
+                {siste ? (
+                  <>
+                    <div style={{ fontSize: 11, color: '#888780' }}>Siste: {fmtDato(siste)}</div>
+                    <div style={{ fontSize: 10, color: '#b0b0ad', marginTop: 1 }}>
+                      Hent fra {fmtDato(siste)} →
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 11, color: '#b0b0ad' }}>Ingen data</div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
         <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ fontSize: 11, color: '#888780', marginBottom: 5 }}>Konto</div>
-            <select value={kontoId}
-              onChange={e => { setKontoId(e.target.value); setPreview(null) }}
-              style={{ fontSize: 13, padding: '5px 8px', borderRadius: 6, border: '.5px solid #d3d1c7' }}>
-              {KONTOER.map(k => <option key={k.id} value={k.id}>{k.label}</option>)}
-            </select>
-          </div>
           <div>
             <div style={{ fontSize: 11, color: '#888780', marginBottom: 5 }}>CSV-fil fra Nordea</div>
             <input id='csv-input' type='file' accept='.csv,.txt'
