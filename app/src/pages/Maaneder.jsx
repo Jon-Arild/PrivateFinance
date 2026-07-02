@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { fmt, MONTHS, AREA_COLORS, AREA_ICONS, moIdx } from '../lib/utils'
+import { fmt, MONTHS, moIdx } from '../lib/utils'
+import { useKategorier } from '../hooks/useKategorier'
 import { useFilter } from '../hooks/useFilter'
 import Card from '../components/Card'
 
@@ -11,6 +12,7 @@ const LANTOT = [22830,0,43760,23057,22316,22316]
 
 export default function Maaneder({ tx }) {
   const { filtered } = useFilter(tx)
+  const { colorMap, iconMap } = useKategorier()
 
   const incMo = MONTHS.map((_,i) => IMI[i]+NOEN[i]+NAV[i])
 
@@ -83,8 +85,8 @@ export default function Maaneder({ tx }) {
           {top8.map(a=>(
             <span key={a} style={{ display:'flex', alignItems:'center', gap:5 }}>
               <span style={{ width:10,height:10,borderRadius:2,
-                background:AREA_COLORS[a]||'#888',display:'inline-block' }}/>
-              {AREA_ICONS[a]||''} {a}
+                background:colorMap[a]||'#888',display:'inline-block' }}/>
+              {iconMap[a]||''} {a}
             </span>
           ))}
         </div>
@@ -94,7 +96,7 @@ export default function Maaneder({ tx }) {
             <YAxis tickFormatter={v=>(v/1000).toFixed(0)+'k'} tick={{fontSize:11}} />
             <Tooltip formatter={v=>fmt(v)} />
             {top8.map(a=>(
-              <Bar key={a} dataKey={a} fill={AREA_COLORS[a]||'#888'}
+              <Bar key={a} dataKey={a} fill={colorMap[a]||'#888'}
                 stackId='a' radius={[0,0,0,0]} />
             ))}
           </BarChart>
@@ -123,8 +125,8 @@ export default function Maaneder({ tx }) {
                   onMouseLeave={e=>e.currentTarget.style.background=''}>
                   <td style={{ padding:'7px 10px', display:'flex', alignItems:'center', gap:6 }}>
                     <span style={{ width:8,height:8,borderRadius:2,flexShrink:0,
-                      background:AREA_COLORS[area]||'#888',display:'inline-block' }}/>
-                    {AREA_ICONS[area]||''} {area}
+                      background:colorMap[area]||'#888',display:'inline-block' }}/>
+                    {iconMap[area]||''} {area}
                   </td>
                   {moVals.map((v,i)=>(
                     <td key={i} style={{ padding:'7px 10px', textAlign:'right', color:'#5f5e5a' }}>

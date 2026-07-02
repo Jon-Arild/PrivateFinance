@@ -1,20 +1,22 @@
 import { useState, useMemo } from 'react'
-import { fmt, MONTHS, AREA_ICONS, AREA_COLORS, AREA_SUBCATS, moIdx } from '../lib/utils'
+import { fmt, MONTHS, moIdx } from '../lib/utils'
+import { useKategorier } from '../hooks/useKategorier'
 import { supabase } from '../lib/supabase'
 
 const ACC = { '64794':'Lønn','64808':'Regning','64743':'Spare','platinum':'Platinum','rammela':'Rammelån' }
-const ALL_AREAS = Object.keys(AREA_SUBCATS).sort()
 
 // Ren form-komponent — kaller onSave(area, subcat) ved lagring
 function EditRow({ tx, saving, err, onSave, onCancel }) {
+  const { subcatMap, iconMap } = useKategorier()
   const [area,   setArea]   = useState(tx.area)
   const [subcat, setSubcat] = useState(tx.subcat)
 
-  const subcats = AREA_SUBCATS[area] || []
+  const allAreas = Object.keys(subcatMap).sort()
+  const subcats  = subcatMap[area] || []
 
   const handleAreaChange = (a) => {
     setArea(a)
-    setSubcat((AREA_SUBCATS[a] || [])[0] || '')
+    setSubcat((subcatMap[a] || [])[0] || '')
   }
 
   return (
@@ -29,7 +31,7 @@ function EditRow({ tx, saving, err, onSave, onCancel }) {
         <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
           <select value={area} onChange={e=>handleAreaChange(e.target.value)}
             style={{ fontSize:12, padding:'3px 6px', borderRadius:5, border:'.5px solid #d3d1c7' }}>
-            {ALL_AREAS.map(a => <option key={a} value={a}>{AREA_ICONS[a]||''} {a}</option>)}
+            {allAreas.map(a => <option key={a} value={a}>{iconMap[a]||''} {a}</option>)}
           </select>
           <select value={subcat} onChange={e=>setSubcat(e.target.value)}
             style={{ fontSize:12, padding:'3px 6px', borderRadius:5, border:'.5px solid #d3d1c7' }}>
@@ -54,6 +56,8 @@ function EditRow({ tx, saving, err, onSave, onCancel }) {
 
 // Nivå 1 — underkategorier
 function SubcatList({ area, tx, onSelect, onClose }) {
+  const { colorMap, iconMap } = useKategorier()
+
   const subs = useMemo(() => {
     const m = {}
     tx.filter(t => t.area === area).forEach(t => {
@@ -65,8 +69,8 @@ function SubcatList({ area, tx, onSelect, onClose }) {
   }, [area, tx])
 
   const total = subs.reduce((s,[,v]) => s+v.total, 0)
-  const color = AREA_COLORS[area] || '#888'
-  const icon  = AREA_ICONS[area]  || ''
+  const color = colorMap[area] || '#888'
+  const icon  = iconMap[area]  || ''
 
   return (
     <div style={{ background:'#fff', border:`.5px solid ${color}`, borderRadius:12,
@@ -121,6 +125,7 @@ function SubcatList({ area, tx, onSelect, onClose }) {
 
 // Nivå 2 — transaksjoner
 function TxList({ area, subcat, tx, onBack, onClose }) {
+  const { colorMap, iconMap } = useKategorier()
   const [search,  setSearch]  = useState('')
   const [mo,      setMo]      = useState('')
   const [acc,     setAcc]     = useState('')
@@ -129,8 +134,8 @@ function TxList({ area, subcat, tx, onBack, onClose }) {
   const [saveErr, setSaveErr] = useState(null)
   const [removed, setRemoved] = useState(new Set())
 
-  const color = AREA_COLORS[area] || '#888'
-  const icon  = AREA_ICONS[area]  || ''
+  const color = colorMap[area] || '#888'
+  const icon  = iconMap[area]  || ''
 
   const rows = useMemo(() => {
     return tx

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { fmt, AREA_COLORS, AREA_ICONS, moIdx } from '../lib/utils'
+import { fmt, moIdx } from '../lib/utils'
+import { useKategorier } from '../hooks/useKategorier'
 import { useFilter } from '../hooks/useFilter'
 import MonthFilter from '../components/MonthFilter'
 import Card from '../components/Card'
@@ -8,6 +9,7 @@ import DrillPanel from '../components/DrillPanel'
 
 export default function Omrader({ tx }) {
   const { filtered, month, setMonth, nMnd } = useFilter(tx)
+  const { colorMap, iconMap } = useKategorier()
   const [drill, setDrill] = useState(null)
 
   const areaTotals = useMemo(() => {
@@ -23,7 +25,7 @@ export default function Omrader({ tx }) {
   }
 
   const barData = areaTotals.map(([a,v]) => ({
-    name: (AREA_ICONS[a]||'')+' '+a, value:Math.round(v), color:AREA_COLORS[a]||'#888'
+    name: (iconMap[a]||'')+' '+a, value:Math.round(v), color:colorMap[a]||'#888'
   }))
 
   return (
@@ -46,8 +48,8 @@ export default function Omrader({ tx }) {
 
       {areaTotals.map(([area, total]) => {
         const subs = subcatTotals(area)
-        const color = AREA_COLORS[area]||'#888'
-        const icon  = AREA_ICONS[area]||''
+        const color = colorMap[area]||'#888'
+        const icon  = iconMap[area]||''
         return (
           <div key={area}
             onClick={()=>setDrill(drill===area?null:area)}

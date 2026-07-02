@@ -3,19 +3,21 @@ import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { signOut } from './lib/auth'
 import { useTransaksjoner } from './hooks/useTransaksjoner'
-import Login       from './pages/Login'
-import Hjem        from './pages/Hjem'
-import Eiendommer  from './pages/Eiendommer'
-import Omrader     from './pages/Omrader'
-import Inntekter   from './pages/Inntekter'
-import Maaneder    from './pages/Maaneder'
+import Login          from './pages/Login'
+import Hjem           from './pages/Hjem'
+import Eiendommer     from './pages/Eiendommer'
+import Omrader        from './pages/Omrader'
+import Inntekter      from './pages/Inntekter'
+import Maaneder       from './pages/Maaneder'
+import Innstillinger  from './pages/Innstillinger'
 
 const NAV = [
-  { to:'/',            label:'Hjem' },
-  { to:'/eiendommer',  label:'Eiendommer' },
-  { to:'/omrader',     label:'Områder' },
-  { to:'/inntekter',   label:'Inntekter' },
-  { to:'/maaneder',    label:'Per måned' },
+  { to:'/',               label:'Hjem' },
+  { to:'/eiendommer',     label:'Eiendommer' },
+  { to:'/omrader',        label:'Områder' },
+  { to:'/inntekter',      label:'Inntekter' },
+  { to:'/maaneder',       label:'Per måned' },
+  { to:'/innstillinger',  label:'Innstillinger' },
 ]
 
 function AppShell() {
@@ -65,11 +67,12 @@ function AppShell() {
       </nav>
       <main style={{ padding:'18px 20px', maxWidth:980, margin:'0 auto' }}>
         <Routes>
-          <Route path="/"           element={<Hjem       tx={data} />} />
-          <Route path="/eiendommer" element={<Eiendommer tx={data} />} />
-          <Route path="/omrader"    element={<Omrader    tx={data} />} />
-          <Route path="/inntekter"  element={<Inntekter  tx={data} />} />
-          <Route path="/maaneder"   element={<Maaneder   tx={data} />} />
+          <Route path="/"               element={<Hjem          tx={data} />} />
+          <Route path="/eiendommer"     element={<Eiendommer    tx={data} />} />
+          <Route path="/omrader"        element={<Omrader       tx={data} />} />
+          <Route path="/inntekter"      element={<Inntekter     tx={data} />} />
+          <Route path="/maaneder"       element={<Maaneder      tx={data} />} />
+          <Route path="/innstillinger"  element={<Innstillinger />} />
         </Routes>
       </main>
     </>

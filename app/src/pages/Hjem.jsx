@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { fmt, MONTHS, AREA_COLORS, AREA_ICONS, moIdx } from '../lib/utils'
+import { fmt, MONTHS, moIdx } from '../lib/utils'
+import { useKategorier } from '../hooks/useKategorier'
 import { useFilter } from '../hooks/useFilter'
 import MonthFilter from '../components/MonthFilter'
 import Card from '../components/Card'
@@ -11,6 +12,7 @@ const fmtK = v => (Math.abs(v)/1000).toFixed(0)+'k'
 
 export default function Hjem({ tx }) {
   const { filtered, filteredInc, month, setMonth, nMnd } = useFilter(tx)
+  const { colorMap, iconMap } = useKategorier()
   const [drill, setDrill] = useState(null)
 
   // Inntekt per måned (fra transaksjoner)
@@ -110,8 +112,8 @@ export default function Hjem({ tx }) {
                 onMouseLeave={e=>{ if(drill!==a) e.currentTarget.style.background='' }}>
                 <td style={{ padding:'7px 10px', display:'flex', alignItems:'center', gap:7 }}>
                   <span style={{ display:'inline-block', width:10, height:10, borderRadius:2,
-                    background:AREA_COLORS[a]||'#888', flexShrink:0 }}/>
-                  {AREA_ICONS[a]||''} {a}
+                    background:colorMap[a]||'#888', flexShrink:0 }}/>
+                  {iconMap[a]||''} {a}
                 </td>
                 <td style={{ padding:'7px 10px', textAlign:'right', fontWeight:500 }}>{fmt(v)}</td>
                 <td style={{ padding:'7px 10px', textAlign:'right', color:'#888780' }}>{fmt(v/nMnd)}</td>

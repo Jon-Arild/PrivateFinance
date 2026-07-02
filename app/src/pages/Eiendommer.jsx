@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { fmt, MONTHS, AREA_COLORS, AREA_ICONS, moIdx } from '../lib/utils'
+import { fmt, MONTHS, moIdx } from '../lib/utils'
 import { useFilter } from '../hooks/useFilter'
 import MonthFilter from '../components/MonthFilter'
 import Card from '../components/Card'
