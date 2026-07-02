@@ -197,19 +197,33 @@ export default function Importer() {
     // Hent eksisterende transaksjoner i samme periode og konto for duplikatsjekk
     const { data: existing, error } = await supabase
       .from('transaksjoner')
-      .select('dato,beskrivelse,belop,konto_id')
+      .select('dato,beskrivelse,belop')
       .gte('dato', minDate)
       .lte('dato', maxDate)
       .eq('konto_id', kontoId)
 
     if (error) { setParseErr(error.message); setChecking(false); return }
 
-    const existingSet = new Set(
-      (existing || []).map(r => `${r.dato}|${r.beskrivelse}|${r.belop}`)
-    )
+    // Antall-basert dedup: samme kombinasjon kan opptre flere ganger legitimt
+    // (f.eks. to overføringer à 200 kr til ulike barnebarns sparekontoer samme dag)
+    const existingCounts = {}
+    ;(existing || []).forEach(r => {
+      const k = `${r.dato}|${r.beskrivelse}|${r.belop}`
+      existingCounts[k] = (existingCounts[k] || 0) + 1
+    })
 
-    const newRows = parsed.filter(r => !existingSet.has(`${r.dato}|${r.beskrivelse}|${r.belop}`))
-    const dupRows = parsed.filter(r =>  existingSet.has(`${r.dato}|${r.beskrivelse}|${r.belop}`))
+    const seen = {}
+    const newRows = []
+    const dupRows = []
+    parsed.forEach(r => {
+      const k = `${r.dato}|${r.beskrivelse}|${r.belop}`
+      seen[k] = (seen[k] || 0) + 1
+      if (seen[k] <= (existingCounts[k] || 0)) {
+        dupRows.push(r)
+      } else {
+        newRows.push(r)
+      }
+    })
 
     setPreview({ newRows, dupRows, minDate, maxDate })
     setChecking(false)

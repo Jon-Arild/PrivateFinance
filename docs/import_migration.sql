@@ -1,12 +1,11 @@
--- Kjør i Supabase SQL Editor
-
--- Sjekk om det finnes duplikater FØR du legger til constraint:
--- SELECT dato, beskrivelse, belop, konto_id, COUNT(*)
--- FROM transaksjoner
--- GROUP BY dato, beskrivelse, belop, konto_id
--- HAVING COUNT(*) > 1;
-
--- Unik constraint for å forhindre dobbeltimport
-ALTER TABLE transaksjoner
-  ADD CONSTRAINT transaksjoner_uniq
-  UNIQUE (dato, beskrivelse, belop, konto_id);
+-- OBS: En enkel UNIQUE-constraint på (dato, beskrivelse, belop, konto_id) er IKKE riktig
+-- for Nordea-eksporter, siden banken ikke eksporterer en unik transaksjons-ID.
+-- Legitime "duplikater" som to separate overføringer på samme beløp og dato
+-- (f.eks. sparing til to forskjellige barnebarns kontoer) vil bli behandlet som duplikater.
+--
+-- Deduplicering håndteres i stedet i applikasjonslogikken med antall-basert sammenligning:
+-- CSV har 2 × samme kombo → DB har 2 → 0 nye (allerede importert, hopp over)
+-- CSV har 2 × samme kombo → DB har 0 → 2 nye (begge importeres)
+-- CSV har 2 × samme kombo → DB har 1 → 1 ny (importer den manglende)
+--
+-- Ingen SQL-endringer nødvendig. Ingen duplikater å slette i eksisterende data.
